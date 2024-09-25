@@ -1,0 +1,58 @@
+spring:
+  application:
+    name: currency-conversion
+server:
+  port: 8100
+eureka:
+  client:
+    service-url:
+      default-zone: http://localhost:8761/eureka
+resilience4j:
+  retry:
+    instances:
+      currencyRetry:
+        max-attempts: 4
+        wait-duration: 1s
+        exponential-backoff-multiplier: 2
+        exponential-max-wait-duration: 4s
+        enable-exponential-backoff: true
+  circuitbreaker:
+    instances:
+      currencyCircuit:
+        permitted-number-of-calls-in-half-open-state: 4
+        max-wait-duration-in-half-open-state: 5s
+        wait-duration-in-open-state: 10s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 1.2
+        exponential-max-wait-duration-in-open-state: 15s
+        slow-call-duration-threshold: 4s
+        slow-call-rate-threshold: 50
+        failure-rate-threshold: ${time:30}
+        sliding-window-size: 10
+        sliding-window-type: count_based
+        minimum-number-of-calls: 9
+  ratelimiter:
+    instances:
+      currencyRateLimiter:
+        timeout-duration: 5s
+        limit-for-period: 10
+        limit-refresh-period: 10s
+  bulkhead:
+    instances:
+      currencyBulkhead:
+        max-concurrent-calls: 10
+        max-wait-duration: 10s
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{traceId:-},%X{spanId:-}]"
+currency:
+  exchange:
+    url: http://localhost:8000
+
